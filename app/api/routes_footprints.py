@@ -22,8 +22,21 @@ def _parse_date(d):
         return None
 
 
+# 优先定义具体路径，避免被通用路径 /{item_id} 匹配
+@router.get("/mine")
+def get_my_footprints(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """获取当前用户的所有足迹"""
+    try:
+        items = db.query(Footprint).filter(Footprint.user_id == user.id).order_by(Footprint.id.desc()).all()
+        data = [_to_out_model(item) for item in items]
+        return ok(data)
+    except Exception as e:
+        return fail(str(e))
+
+
 @router.get("/")
-def list_my_footprints(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def list_user_footprints(db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """获取当前用户的所有足迹 (与 /mine 相同，保持兼容性)"""
     try:
         items = db.query(Footprint).filter(Footprint.user_id == user.id).order_by(Footprint.id.desc()).all()
         data = [_to_out_model(item) for item in items]
@@ -34,6 +47,7 @@ def list_my_footprints(db: Session = Depends(get_db), user=Depends(get_current_u
 
 @router.post("/")
 def create_footprint(body: FootprintCreate, db: Session = Depends(get_db), user=Depends(get_current_user)):
+    """创建新足迹"""
     try:
         tags_str = ",".join(body.tags or [])
         item = Footprint(
@@ -53,17 +67,6 @@ def create_footprint(body: FootprintCreate, db: Session = Depends(get_db), user=
         return ok(_to_out_model(item), "创建成功")
     except Exception as e:
         db.rollback()
-        return fail(str(e))
-
-
-# 先定义固定路径，避免被 /{item_id} 抢占
-@router.get("/mine")
-def list_my_footprints_mine(db: Session = Depends(get_db), user=Depends(get_current_user)):
-    try:
-        items = db.query(Footprint).filter(Footprint.user_id == user.id).order_by(Footprint.id.desc()).all()
-        data = [_to_out_model(item) for item in items]
-        return ok(data)
-    except Exception as e:
         return fail(str(e))
 
 @router.get("/public")
