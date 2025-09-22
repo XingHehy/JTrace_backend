@@ -26,11 +26,29 @@ class JWTSettings(BaseModel):
     access_token_expires_minutes: int = 60 * 24
 
 
+class UploadAccessSignatureSettings(BaseModel):
+    enabled: bool = True
+    secret_key: str
+    expires_minutes: int = 60
+    algorithm: str = "HS256"
+
+
+class UploadSettings(BaseModel):
+    base_dir: str = "uploads"
+    max_file_size: int = 52428800  # 50MB
+    allowed_image_types: list[str] = ["image/jpeg", "image/png", "image/gif", "image/webp", "image/jpg"]
+    allowed_video_types: list[str] = ["video/mp4", "video/avi", "video/mov", "video/mkv", "video/webm"]
+    access_signature: UploadAccessSignatureSettings
+    directory_strategy: str = "date_user"  # date_user | user_date | simple
+    create_thumbnails: bool = True
+
+
 class AppSettings(BaseModel):
     server: ServerSettings
     mysql: MySQLSettings
     redis: RedisSettings
     jwt: JWTSettings
+    upload: UploadSettings
 
 
 @lru_cache

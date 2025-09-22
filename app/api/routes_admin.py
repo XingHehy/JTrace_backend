@@ -7,6 +7,7 @@ from ..models.oplog import OpLog
 from ..schemas.user import UserOut
 from .deps import get_current_admin
 from ..utils.response import ok, fail
+from pydantic import BaseModel
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -19,9 +20,14 @@ def list_users(db: Session = Depends(get_db), admin: User = Depends(get_current_
             {
                 "id": u.id,
                 "username": u.username,
-                "is_admin": u.is_admin,
-                "is_active": u.is_active,
+                "email": u.email,
+                "is_admin": u.id == 1,  # 管理员判断基于ID=1
+                "is_active": u.status == 1,  # 激活状态基于status字段
+                "status": u.status,
+                "bio": u.bio,
+                "last_login": u.last_login.isoformat() if u.last_login else None,
                 "created_at": u.created_at.isoformat() if u.created_at else None,
+                "updated_at": u.updated_at.isoformat() if u.updated_at else None,
             }
             for u in users
         ]
@@ -48,4 +54,33 @@ def list_logs(db: Session = Depends(get_db), admin: User = Depends(get_current_a
         ]
         return ok(data)
     except Exception as e:
+        return fail(str(e))
+
+
+class UpdateUserStatusRequest(BaseModel):
+    status: int
+
+
+@router.put("/users/{user_id}/status")
+def update_user_status(
+    user_id: int, 
+    request: UpdateUserStatusRequest,
+    db: Session = Depends(get_db), 
+    admin: User = Depends(get_current_admin)
+):
+    try:
+        # 不允许修改管理员自己的状态
+        if user_id == 1:
+            return fail("不能修改管理员账户状态")
+        
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user:
+            return fail("用户不存在")
+        
+        user.status = request.status
+        db.commit()
+        
+        return ok({"id": user.id, "status": user.status}, "用户状态更新成功")
+    except Exception as e:
+        db.rollback()
         return fail(str(e))

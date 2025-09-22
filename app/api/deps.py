@@ -26,10 +26,16 @@ def get_current_user(db: Session = Depends(get_db), token: str = Depends(oauth2_
     user = db.query(User).filter(User.username == username).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+    
+    # 检查用户状态
+    if user.status != 1:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Account disabled")
+    
     return user
 
 
 def get_current_admin(user: User = Depends(get_current_user)) -> User:
-    if not user.is_admin:
+    # 检查是否为管理员（用户ID为1）
+    if user.id != 1:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin only")
     return user
