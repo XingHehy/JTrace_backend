@@ -14,6 +14,7 @@ class UserCreate(UserBase):
 
 class UserUpdate(BaseModel):
     username: Optional[str] = None
+    nickname: Optional[str] = None
     email: Optional[EmailStr] = None
     avatar: Optional[str] = None
     bio: Optional[str] = None
@@ -32,6 +33,7 @@ class UserAvatarUpdate(BaseModel):
 
 class UserOut(UserBase):
     id: int
+    nickname: Optional[str] = None
     avatar: Optional[str] = None
     bio: Optional[str] = None
     gender: int = 0
@@ -47,6 +49,7 @@ class UserOut(UserBase):
 class UserSummary(BaseModel):
     id: int
     username: str
+    nickname: Optional[str] = None
     avatar: Optional[str] = None
 
     class Config:

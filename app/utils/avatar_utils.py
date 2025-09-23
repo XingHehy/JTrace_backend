@@ -16,12 +16,18 @@ def convert_avatar_url(avatar_url: str) -> str:
     Examples:
         >>> convert_avatar_url("/uploads/avatars/avatar_xxx.jpg")
         "/avatars/avatar_xxx.jpg"
+        >>> convert_avatar_url("https://example.com/avatar.jpg")
+        "https://example.com/avatar.jpg"
         >>> convert_avatar_url(None)
         None
         >>> convert_avatar_url("/other/path.jpg")
         "/other/path.jpg"
     """
     if not avatar_url:
+        return avatar_url
+    
+    # 如果是外部HTTP/HTTPS链接，直接返回
+    if avatar_url.startswith('http://') or avatar_url.startswith('https://'):
         return avatar_url
     
     if avatar_url.startswith('/uploads/avatars/'):

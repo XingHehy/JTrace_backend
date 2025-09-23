@@ -377,6 +377,7 @@ def _footprint_to_dict(footprint: Footprint, include_comments: bool = False) -> 
         result["user"] = {
             "id": footprint.user.id,
             "username": footprint.user.username,
+            "nickname": footprint.user.nickname,
             "avatar": convert_avatar_url(footprint.user.avatar)
         }
     
@@ -432,6 +433,7 @@ def _footprint_to_dict(footprint: Footprint, include_comments: bool = False) -> 
                 "user": {
                     "id": comment.user.id,
                     "username": comment.user.username,
+                    "nickname": comment.user.nickname,
                     "avatar": convert_avatar_url(comment.user.avatar)
                 } if comment.user else None,
                 "images": [

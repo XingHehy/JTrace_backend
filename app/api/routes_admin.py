@@ -20,6 +20,7 @@ def list_users(db: Session = Depends(get_db), admin: User = Depends(get_current_
             {
                 "id": u.id,
                 "username": u.username,
+                "nickname": u.nickname,
                 "email": u.email,
                 "is_admin": u.id == 1,  # 管理员判断基于ID=1
                 "is_active": u.status == 1,  # 激活状态基于status字段

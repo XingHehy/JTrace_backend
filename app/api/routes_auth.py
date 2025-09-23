@@ -27,8 +27,30 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
         if exist_email:
             return fail("邮箱已存在")
         
+        # 生成随机昵称（用户+6位随机数）
+        import random
+        nickname = None
+        max_attempts = 10
+        attempt = 0
+        
+        while attempt < max_attempts:
+            temp_nickname = f"用户{random.randint(100000, 999999)}"
+            # 检查昵称是否已存在
+            existing_nickname = db.query(User).filter(User.nickname == temp_nickname).first()
+            if not existing_nickname:
+                nickname = temp_nickname
+                break
+            attempt += 1
+        
+        # 如果多次尝试后仍未找到唯一昵称，使用时间戳作为后缀
+        if nickname is None:
+            from datetime import datetime
+            timestamp = int(datetime.utcnow().timestamp())
+            nickname = f"用户{str(timestamp)[-6:]}"
+        
         user = User(
             username=data.username, 
+            nickname=nickname,
             email=data.email,
             password_hash=hash_password(data.password)
         )
@@ -38,7 +60,8 @@ def register(data: RegisterRequest, db: Session = Depends(get_db)):
         
         return ok({
             "id": user.id, 
-            "username": user.username, 
+            "username": user.username,
+            "nickname": user.nickname,
             "email": user.email,
             "status": user.status,
             "created_at": user.created_at.isoformat()
@@ -78,6 +101,7 @@ def me(current: User = Depends(get_current_user)):
         return ok({
             "id": current.id,
             "username": current.username,
+            "nickname": current.nickname,
             "email": current.email,
             "avatar": convert_avatar_url(current.avatar),
             "bio": current.bio,
@@ -94,13 +118,6 @@ def me(current: User = Depends(get_current_user)):
 @router.put("/me")
 def update_profile(data: UserUpdate, current: User = Depends(get_current_user), db: Session = Depends(get_db)):
     try:
-        # 检查用户名是否已被其他用户使用
-        if data.username and data.username != current.username:
-            exist_username = db.query(User).filter(User.username == data.username, User.id != current.id).first()
-            if exist_username:
-                return fail("用户名已存在")
-            current.username = data.username
-        
         # 检查邮箱是否已被其他用户使用
         if data.email and data.email != current.email:
             exist_email = db.query(User).filter(User.email == data.email, User.id != current.id).first()
@@ -108,6 +125,8 @@ def update_profile(data: UserUpdate, current: User = Depends(get_current_user), 
                 return fail("邮箱已存在")
             current.email = data.email
         
+        if data.nickname is not None:
+            current.nickname = data.nickname
         if data.avatar is not None:
             current.avatar = data.avatar
         if data.bio is not None:
@@ -123,6 +142,7 @@ def update_profile(data: UserUpdate, current: User = Depends(get_current_user), 
         return ok({
             "id": current.id,
             "username": current.username,
+            "nickname": current.nickname,
             "email": current.email,
             "avatar": convert_avatar_url(current.avatar),
             "bio": current.bio,
@@ -145,6 +165,7 @@ def update_avatar(data: UserAvatarUpdate, current: User = Depends(get_current_us
         return ok({
             "id": current.id,
             "username": current.username,
+            "nickname": current.nickname,
             "avatar": convert_avatar_url(current.avatar)
         }, "头像更新成功")
     except Exception as e:

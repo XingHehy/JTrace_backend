@@ -229,6 +229,7 @@ def _comment_to_dict(comment: Comment, include_footprint: bool = False) -> dict:
         result["user"] = {
             "id": comment.user.id,
             "username": comment.user.username,
+            "nickname": comment.user.nickname,
             "avatar": convert_avatar_url(comment.user.avatar)
         }
     

@@ -9,6 +9,7 @@ class User(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True, comment='用户ID')
     username: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False, comment='用户名')
+    nickname: Mapped[str | None] = mapped_column(String(50), nullable=True, comment='昵称')
     email: Mapped[str] = mapped_column(String(100), unique=True, index=True, nullable=False, comment='邮箱')
     password_hash: Mapped[str] = mapped_column(String(255), nullable=False, comment='密码哈希')
     avatar: Mapped[str | None] = mapped_column(String(255), nullable=True, comment='头像URL')
