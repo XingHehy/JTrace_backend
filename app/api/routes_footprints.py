@@ -85,7 +85,20 @@ def get_my_footprints(
             .all()
         )
         
-        return ok([_footprint_to_dict(item) for item in items])
+        # 返回用户信息和足迹列表，与其他接口保持一致的数据结构
+        return ok({
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "nickname": user.nickname,
+                "avatar": convert_avatar_url(user.avatar),
+                "bio": user.bio,
+                "gender": user.gender,
+                "created_at": user.created_at.isoformat(),
+                "is_admin": user.id == 1  # 简单判断管理员
+            },
+            "footprints": [_footprint_to_dict(item) for item in items]
+        })
     except Exception as e:
         return fail(str(e))
 
@@ -125,6 +138,57 @@ def list_public_footprints(
         )
         
         return ok([_footprint_to_dict(item) for item in items])
+    except Exception as e:
+        return fail(str(e))
+
+
+@router.get("/user/{username}")
+def get_user_footprints(
+    username: str,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=100),
+    db: Session = Depends(get_db)
+):
+    """获取指定用户的公开足迹"""
+    try:
+        # 查找用户
+        user = db.query(User).filter(User.username == username).first()
+        if not user:
+            return fail("用户不存在")
+        
+        # 查询该用户的公开足迹
+        items = (
+            db.query(Footprint)
+            .filter(
+                Footprint.user_id == user.id,
+                Footprint.is_public == 1
+            )
+            .options(
+                joinedload(Footprint.footprint_type),
+                joinedload(Footprint.tags).joinedload(FootprintTag.tag),
+                joinedload(Footprint.medias),
+                joinedload(Footprint.user)
+            )
+            .order_by(Footprint.created_at.desc())
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+        
+        # 返回用户信息和足迹列表
+        return ok({
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "nickname": user.nickname,
+                "avatar": convert_avatar_url(user.avatar),
+                "bio": user.bio,
+                "gender": user.gender,
+                "created_at": user.created_at.isoformat(),
+                "is_admin": user.id == 1  # 简单判断管理员
+            },
+            "footprints": [_footprint_to_dict(item) for item in items]
+        })
     except Exception as e:
         return fail(str(e))
 
@@ -212,7 +276,7 @@ def get_footprint(
     db: Session = Depends(get_db), 
     user = Depends(get_current_user)
 ):
-    """获取足迹详情"""
+    """获取足迹详情（需要登录）"""
     try:
         footprint = (
             db.query(Footprint)
@@ -236,6 +300,38 @@ def get_footprint(
         
         if not footprint:
             return fail("足迹不存在或无权访问")
+        
+        return ok(_footprint_to_dict(footprint, include_comments=True))
+    except Exception as e:
+        return fail(str(e))
+
+
+@router.get("/{footprint_id}/detail")
+def get_footprint_detail(
+    footprint_id: int, 
+    db: Session = Depends(get_db)
+):
+    """获取足迹详情（公开访问，用于分享）"""
+    try:
+        footprint = (
+            db.query(Footprint)
+            .options(
+                joinedload(Footprint.footprint_type),
+                joinedload(Footprint.tags).joinedload(FootprintTag.tag),
+                joinedload(Footprint.medias),
+                joinedload(Footprint.user),
+                joinedload(Footprint.comments).joinedload(Comment.user),
+                joinedload(Footprint.comments).joinedload(Comment.images)
+            )
+            .filter(
+                Footprint.id == footprint_id,
+                Footprint.is_public == 1  # 只能访问公开足迹
+            )
+            .first()
+        )
+        
+        if not footprint:
+            return fail("足迹不存在或不是公开足迹")
         
         return ok(_footprint_to_dict(footprint, include_comments=True))
     except Exception as e:
