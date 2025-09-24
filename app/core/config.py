@@ -43,12 +43,31 @@ class UploadSettings(BaseModel):
     create_thumbnails: bool = True
 
 
+class MapSettings(BaseModel):
+    api_key: str
+    security_js_code: str
+    version: str = "2.0"
+    ui_version: str = "1.1.1"
+
+
+class MapEncryptionSettings(BaseModel):
+    enabled: bool = True
+    secret_key: str = "map_config_secret_2024"
+    algorithm: str = "HS256"
+
+
+class MapsSettings(BaseModel):
+    amap: MapSettings
+    encryption: MapEncryptionSettings = MapEncryptionSettings()
+
+
 class AppSettings(BaseModel):
     server: ServerSettings
     mysql: MySQLSettings
     redis: RedisSettings
     jwt: JWTSettings
     upload: UploadSettings
+    maps: MapsSettings = None
 
 
 @lru_cache

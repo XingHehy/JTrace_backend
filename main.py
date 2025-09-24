@@ -13,6 +13,7 @@ from app.api.routes_footprint_types import router as footprint_types_router
 from app.api.routes_comments import router as comments_router
 from app.api.routes_admin import router as admin_router
 from app.api.routes_upload import router as upload_router
+from app.api.routes_map import router as map_router
 from app.core.security import decode_token, hash_password
 from app.models.user import User
 from app.utils.file_signature import file_signature_manager
@@ -33,7 +34,7 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     with Session(bind=engine) as s:
         # 创建管理员用户
-        admin = s.query(User).filter(User.username == 'admin').first()
+        admin = s.query(User).filter(User.id == 1).first()
         if not admin:
             admin = User(
                 username='admin', 
@@ -46,12 +47,12 @@ async def lifespan(app: FastAPI):
         # 创建默认的足迹类型
         from app.models import FootprintType
         default_types = [
-            {'name': '美食', 'icon': '/icons/food.svg', 'sort_order': 1},
-            {'name': '景点', 'icon': '/icons/attraction.svg', 'sort_order': 2},
-            {'name': '自然', 'icon': '/icons/nature.svg', 'sort_order': 3},
-            {'name': '博物馆', 'icon': '/icons/museum.svg', 'sort_order': 4},
-            {'name': '购物', 'icon': '/icons/shopping.svg', 'sort_order': 5},
-            {'name': '其他', 'icon': '/icons/default.svg', 'sort_order': 6}
+            {'name': '美食', 'icon': '/icons/map/food.svg', 'sort_order': 1},
+            {'name': '景点', 'icon': '/icons/map/attraction.svg', 'sort_order': 2},
+            {'name': '自然', 'icon': '/icons/map/nature.svg', 'sort_order': 3},
+            {'name': '博物馆', 'icon': '/icons/map/museum.svg', 'sort_order': 4},
+            {'name': '购物', 'icon': '/icons/map/shopping.svg', 'sort_order': 5},
+            {'name': '其他', 'icon': '/icons/map/default.svg', 'sort_order': 6}
         ]
         
         for type_data in default_types:
@@ -151,6 +152,7 @@ app.include_router(footprint_types_router, prefix="/api")
 app.include_router(comments_router, prefix="/api")
 app.include_router(admin_router, prefix="/api")
 app.include_router(upload_router, prefix="/api")
+app.include_router(map_router, prefix="/api")
 
 # 文件访问路由（不使用/api前缀，直接处理/file路径）
 @app.get("/file/{file_path:path}")

@@ -13,7 +13,7 @@ from ..schemas.footprint import (
     FootprintTypeCreate, FootprintTypeOut,
     TagOut, FootprintSummary
 )
-from .deps import get_current_user
+from .deps import get_current_user, get_current_user_optional
 from ..utils.response import ok, fail
 from ..utils.avatar_utils import convert_avatar_url
 from ..utils.media_utils import generate_media_url
@@ -309,9 +309,10 @@ def get_footprint(
 @router.get("/{footprint_id}/detail")
 def get_footprint_detail(
     footprint_id: int, 
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    user = Depends(get_current_user_optional)  # 可选用户，支持未登录访问
 ):
-    """获取足迹详情（公开访问，用于分享）"""
+    """获取足迹详情（智能权限判断）"""
     try:
         footprint = (
             db.query(Footprint)
@@ -323,17 +324,24 @@ def get_footprint_detail(
                 joinedload(Footprint.comments).joinedload(Comment.user),
                 joinedload(Footprint.comments).joinedload(Comment.images)
             )
-            .filter(
-                Footprint.id == footprint_id,
-                Footprint.is_public == 1  # 只能访问公开足迹
-            )
+            .filter(Footprint.id == footprint_id)
             .first()
         )
         
         if not footprint:
-            return fail("足迹不存在或不是公开足迹")
+            return fail("足迹不存在")
         
-        return ok(_footprint_to_dict(footprint, include_comments=True))
+        # 权限检查：公开足迹或者是自己的足迹
+        if footprint.is_public == 1:
+            # 公开足迹，任何人都可以访问
+            return ok(_footprint_to_dict(footprint, include_comments=True))
+        elif user and footprint.user_id == user.id:
+            # 私有足迹，但是是本人访问
+            return ok(_footprint_to_dict(footprint, include_comments=True))
+        else:
+            # 私有足迹，不是本人访问
+            return fail("足迹不存在或无权访问")
+        
     except Exception as e:
         return fail(str(e))
 
