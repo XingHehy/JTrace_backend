@@ -1,3 +1,13 @@
+闲着没事写的一个旅行分享的网站
+
+前端：[XingHehy/JTrace_frontend](https://github.com/XingHehy/JTrace_frontend)
+
+预览图：
+
+![四端预览图](https://github.com/XingHehy/JTrace_backend/blob/master/1.png?raw=true)
+
+---
+
 # 途迹星球（JourneyTrace Planet）- 记录你的每一步旅行
 从个人足迹记录到全球旅行分享，你的旅程值得被看见。用地图，写满你的旅行故事，让每一段行走都留下清晰印记，让每一份回忆都能长久珍藏。
 
